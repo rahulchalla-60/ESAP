@@ -4,21 +4,25 @@ import Service from "../models/Service.js";
 // @route   POST /api/services
 // @access  Private (provider only)
 export const createService = async (req, res) => {
-  const { serviceName, description, price } = req.body;
+  const { serviceName, description, price, media } = req.body;
 
   if (req.user.role !== "provider") {
     return res.status(403).json({ message: "Only providers can create services" });
   }
 
-  // Get uploaded image URLs
-  const media = req.files.map(file => file.path);
+  // Convert media base64 data to Buffers
+  const mediaArray = Array.isArray(media) ? media.map(item => ({
+    data: Buffer.from(item.data, 'base64'),
+    contentType: item.contentType,
+    filename: item.filename || undefined,
+  })) : [];
 
   const service = await Service.create({
     provider: req.user._id,
     serviceName,
     description,
     price,
-    media,
+    media: mediaArray,
   });
 
   res.status(201).json(service);

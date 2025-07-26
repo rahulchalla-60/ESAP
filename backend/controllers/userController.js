@@ -5,7 +5,7 @@ import generateToken from "../utils/generateToken.js";
 // @route   POST /api/users/register
 // @access  Public
 export const registerUser = async (req, res) => {
-  const { name, contact, password, role } = req.body;
+  const { name, contact, password, role, photo } = req.body;
 
   try {
     // Check if user already exists
@@ -14,8 +14,17 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Prepare photo field if provided
+    let photoField = undefined;
+    if (photo && photo.data && photo.contentType) {
+      photoField = {
+        data: Buffer.from(photo.data, 'base64'),
+        contentType: photo.contentType,
+      };
+    }
+
     // Create new user
-    const user = await User.create({ name, contact, password, role });
+    const user = await User.create({ name, contact, password, role, photo: photoField });
 
     if (user) {
       res.status(201).json({
@@ -23,6 +32,7 @@ export const registerUser = async (req, res) => {
         name: user.name,
         contact: user.contact,
         role: user.role,
+        hasPhoto: !!user.photo && !!user.photo.data,
         token: generateToken(user._id),
       });
     } else {

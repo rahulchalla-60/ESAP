@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  photo: {
+    data: Buffer,
+    contentType: String,
+  },
 });
 
 // Hash password before saving
