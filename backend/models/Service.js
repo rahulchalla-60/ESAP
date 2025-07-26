@@ -15,7 +15,13 @@ const serviceSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  media: [String], // URLs (Cloudinary etc.)
+  media: [
+    {
+      data: Buffer,
+      contentType: String,
+      filename: String,
+    }
+  ], // Store files directly in MongoDB
   ratings: {
     type: Number,
     default: 0,
