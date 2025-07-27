@@ -1,0 +1,372 @@
+.dashboard-container {
+  min-height: 100vh;
+  background: #f0f4f8;
+  padding: 20px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 25px 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+
+.user-info h1 {
+  color: #2d3748;
+  margin: 0 0 5px 0;
+  font-size: 1.8rem;
+}
+
+.user-info p {
+  color: #718096;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.create-btn {
+  background: linear-gradient(90deg, #38a169 0%, #48bb78 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.create-btn:hover {
+  background: linear-gradient(90deg, #2f855a 0%, #38a169 100%);
+}
+
+.logout-btn {
+  background: #e53e3e;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.logout-btn:hover {
+  background: #c53030;
+}
+
+.message {
+  background: #3182ce;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Modal Form */
+.form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.form-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form-modal h2 {
+  color: #2d3748;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-modal input,
+.form-modal textarea {
+  width: 100%;
+  padding: 12px 16px;
+  margin: 8px 0 16px 0;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #2d3748;
+  transition: border 0.2s;
+  box-sizing: border-box;
+}
+
+.form-modal input:focus,
+.form-modal textarea:focus {
+  outline: none;
+  border-color: #3182ce;
+}
+
+.form-modal textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.service-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.service-previews img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.submit-btn {
+  flex: 1;
+  background: linear-gradient(90deg, #3182ce 0%, #63b3ed 100%);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(90deg, #2563eb 0%, #4299e1 100%);
+}
+
+.cancel-btn {
+  flex: 1;
+  background: #a0aec0;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #718096;
+}
+
+/* Services Section */
+.services-section {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.services-section h2 {
+  color: #2d3748;
+  margin-bottom: 25px;
+  font-size: 1.5rem;
+}
+
+.no-services {
+  text-align: center;
+  padding: 40px;
+  color: #a0aec0;
+}
+
+.no-services p {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.create-first-btn {
+  background: linear-gradient(90deg, #38a169 0%, #48bb78 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.create-first-btn:hover {
+  background: linear-gradient(90deg, #2f855a 0%, #38a169 100%);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+.service-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.service-media {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 15px;
+  background: #f7fafc;
+}
+
+.service-image {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.no-media {
+  color: #a0aec0;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+.service-info {
+  padding: 20px;
+}
+
+.service-info h3 {
+  color: #2d3748;
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+}
+
+.service-description {
+  color: #4a5568;
+  margin: 0 0 15px 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.service-price {
+  color: #38a169;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0 0 8px 0;
+}
+
+.service-rating {
+  color: #d69e2e;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.service-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-btn {
+  flex: 1;
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.edit-btn:hover {
+  background: #2563eb;
+}
+
+.delete-btn {
+  flex: 1;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background: #c53030;
+}
+
+.loading {
+  text-align: center;
+  color: #4a5568;
+  padding: 40px;
+  font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .service-actions {
+    flex-direction: column;
+  }
+  
+  .form-modal {
+    width: 95%;
+    padding: 20px;
+  }
+} 

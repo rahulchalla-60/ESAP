@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 
 const Login = () => {
@@ -9,6 +9,7 @@ const Login = () => {
     password: "",
   });
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm((prev) => ({
@@ -21,7 +22,18 @@ const Login = () => {
     e.preventDefault();
     setMessage("");
     try {
-      await axios.post("http://localhost:5000/api/users/login", form);
+      const response = await axios.post("http://localhost:5000/api/users/login", form);
+      
+      // Save token to localStorage
+      localStorage.setItem("token", response.data.token);
+      
+      // Redirect based on user role
+      if (response.data.role === "provider") {
+        navigate("/provider-dashboard"); // You can create this later
+      } else {
+        navigate("/home");
+      }
+      
       setMessage("Login successful!");
     } catch (err) {
       setMessage(err.response?.data?.message || "Login failed");
