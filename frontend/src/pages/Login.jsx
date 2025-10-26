@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { apiService, handleApiError } from "../config/api.js";
 import "./Login.css";
 
 const Login = () => {
@@ -22,21 +22,23 @@ const Login = () => {
     e.preventDefault();
     setMessage("");
     try {
-      const response = await axios.post("http://localhost:5000/api/users/login", form);
+      const response = await apiService.user.login(form);
       
       // Save token to localStorage
-      localStorage.setItem("token", response.data.token);
+      const token = response.data.data?.token || response.data.token;
+      localStorage.setItem("token", token);
       
       // Redirect based on user role
-      if (response.data.role === "provider") {
-        navigate("/provider-dashboard"); // You can create this later
+      const userRole = response.data.data?.role || response.data.role;
+      if (userRole === "provider") {
+        navigate("/provider-dashboard");
       } else {
         navigate("/home");
       }
       
       setMessage("Login successful!");
     } catch (err) {
-      setMessage(err.response?.data?.message || "Login failed");
+      setMessage(handleApiError(err));
     }
   };
 

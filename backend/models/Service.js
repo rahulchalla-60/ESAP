@@ -20,7 +20,7 @@ const serviceSchema = new mongoose.Schema({
       data: Buffer,
       contentType: String,
       filename: String,
-    }
+    },
   ], // Store files directly in MongoDB
   ratings: {
     type: Number,

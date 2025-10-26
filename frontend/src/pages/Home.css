@@ -128,11 +128,47 @@
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
   background: white;
+  position: relative;
 }
 
-.service-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+.service-card.clickable {
+  cursor: pointer;
+}
+
+.service-card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.service-card.clickable:hover .service-card-overlay {
+  opacity: 1;
+}
+
+.service-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 115, 177, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+}
+
+.view-details {
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 12px 24px;
+  border: 2px solid white;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .service-media {
@@ -225,5 +261,22 @@
   
   .services-grid {
     grid-template-columns: 1fr;
+  }
+  
+  /* Mobile optimizations for clickable cards */
+  .service-card.clickable:hover {
+    transform: none; /* Disable hover transform on mobile */
+  }
+  
+  .service-card-overlay {
+    display: none; /* Hide overlay on mobile for better touch experience */
+  }
+  
+  .service-card.clickable {
+    transition: background-color 0.2s ease;
+  }
+  
+  .service-card.clickable:active {
+    background-color: #f8f9fa;
   }
 } 

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { apiService, handleApiError } from "../config/api.js";
+import { useSocket } from "../hooks/useSocket";
+import chatService from "../services/chatService";
+import ChatModal from "../components/ChatModal";
+import ConnectionStatus from "../components/ConnectionStatus";
 import "./ProviderDashboard.css";
 
 const ProviderDashboard = () => {
@@ -11,6 +15,16 @@ const ProviderDashboard = () => {
   const [editingService, setEditingService] = useState(null);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+
+  // Chat-related state
+  const [activeTab, setActiveTab] = useState('services'); // 'services' or 'chat'
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+
+  // Socket connection
+  const { isConnected, connectionError, reconnectAttempts } = useSocket();
 
   const [serviceForm, setServiceForm] = useState({
     serviceName: "",
@@ -41,11 +55,7 @@ const ProviderDashboard = () => {
 
   const loadUserProfile = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/users/profile", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      const response = await apiService.user.getProfile();
       setUser(response.data);
       
       // If user is not a provider, redirect
@@ -63,27 +73,13 @@ const ProviderDashboard = () => {
   const loadServices = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/services", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      console.log("All services:", response.data.services);
-      console.log("Current user ID:", user?._id);
-      
-      // For debugging: show all services first
-      if (response.data.services.length > 0) {
-        console.log("First service provider ID:", response.data.services[0].provider._id);
-        console.log("Current user ID:", user._id);
-        console.log("Are they equal?", response.data.services[0].provider._id === user._id);
-      }
+      const response = await apiService.services.getAll();
       
       // Filter services to show only the provider's services
       const userServices = response.data.services.filter(
         service => service.provider._id === user._id
       );
       
-      console.log("Filtered services for user:", userServices);
       setServices(userServices);
     } catch (error) {
       console.error("Error loading services:", error);
@@ -138,17 +134,14 @@ const ProviderDashboard = () => {
     setMessage("");
     
     try {
-      const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/services", serviceForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiService.services.create(serviceForm);
       
       setMessage("Service created successfully!");
       setShowCreateForm(false);
       resetServiceForm();
       loadServices(); // Reload services
     } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to create service");
+      setMessage(handleApiError(error));
     }
   };
 
@@ -171,10 +164,7 @@ const ProviderDashboard = () => {
     setMessage("");
     
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(`http://localhost:5000/api/services/${editingService._id}`, serviceForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiService.services.update(editingService._id, serviceForm);
       
       setMessage("Service updated successfully!");
       setShowCreateForm(false);
@@ -182,7 +172,7 @@ const ProviderDashboard = () => {
       resetServiceForm();
       loadServices();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to update service");
+      setMessage(handleApiError(error));
     }
   };
 
@@ -192,15 +182,12 @@ const ProviderDashboard = () => {
     }
     
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/services/${serviceId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiService.services.delete(serviceId);
       
       setMessage("Service deleted successfully!");
       loadServices();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to delete service");
+      setMessage(handleApiError(error));
     }
   };
 
@@ -218,6 +205,67 @@ const ProviderDashboard = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
+
+  // Chat functions
+  const loadConversations = async () => {
+    if (!user || !isConnected) return;
+
+    setChatLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/chat/conversations/provider/${user._id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setConversations(data.conversations || []);
+      } else {
+        console.error('Failed to load conversations');
+      }
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleConversationClick = (conversation) => {
+    setSelectedConversation(conversation);
+    setIsChatModalOpen(true);
+  };
+
+  const handleCloseChatModal = () => {
+    setIsChatModalOpen(false);
+    setSelectedConversation(null);
+  };
+
+  const formatLastMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now - date) / (1000 * 60 * 60);
+
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const getUnreadCount = (conversation) => {
+    if (!conversation.unreadCounts || !user) return 0;
+    return conversation.unreadCounts[user._id] || 0;
+  };
+
+  // Load conversations when user is loaded and socket is connected
+  useEffect(() => {
+    if (user && user.role === "provider" && isConnected && activeTab === 'chat') {
+      loadConversations();
+    }
+  }, [user, isConnected, activeTab]);
 
   const formatPrice = (price) => {
     return `$${price}`;
@@ -273,6 +321,38 @@ const ProviderDashboard = () => {
       </header>
 
       {message && <div className="message">{message}</div>}
+
+      {/* Tab Navigation */}
+      <div className="tab-navigation">
+        <button 
+          className={`tab-button ${activeTab === 'services' ? 'active' : ''}`}
+          onClick={() => setActiveTab('services')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Your Services ({services.length})
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'chat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('chat')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Chat Inbox ({conversations.length})
+          {conversations.some(conv => getUnreadCount(conv) > 0) && (
+            <span className="unread-indicator"></span>
+          )}
+        </button>
+        <div className="connection-status-container">
+          <ConnectionStatus 
+            isConnected={isConnected}
+            reconnectAttempts={reconnectAttempts}
+            connectionError={connectionError}
+          />
+        </div>
+      </div>
 
       {/* Create/Edit Service Form */}
       {showCreateForm && (
@@ -337,9 +417,10 @@ const ProviderDashboard = () => {
         </div>
       )}
 
-      {/* Services List */}
-      <div className="services-section">
-        <h2>Your Services ({services.length})</h2>
+      {/* Content based on active tab */}
+      {activeTab === 'services' && (
+        <div className="services-section">
+          <h2>Your Services ({services.length})</h2>
         {services.length === 0 ? (
           <div className="no-services">
             <p>You haven't created any services yet.</p>
@@ -385,7 +466,85 @@ const ProviderDashboard = () => {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      )}
+
+      {/* Chat Inbox Section */}
+      {activeTab === 'chat' && (
+        <div className="chat-section">
+          <h2>Chat Inbox ({conversations.length})</h2>
+          {chatLoading ? (
+            <div className="chat-loading">
+              <div className="loading-spinner"></div>
+              <span>Loading conversations...</span>
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="no-conversations">
+              <div className="empty-chat-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+              </div>
+              <h3>No conversations yet</h3>
+              <p>When customers message you about your services, their conversations will appear here.</p>
+            </div>
+          ) : (
+            <div className="conversations-list">
+              {conversations.map((conversation) => {
+                const otherParticipant = conversation.participants.find(p => p.userId !== user._id);
+                const unreadCount = getUnreadCount(conversation);
+                
+                return (
+                  <div 
+                    key={conversation._id} 
+                    className={`conversation-item ${unreadCount > 0 ? 'unread' : ''}`}
+                    onClick={() => handleConversationClick(conversation)}
+                  >
+                    <div className="conversation-avatar">
+                      {otherParticipant?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="conversation-content">
+                      <div className="conversation-header">
+                        <h4 className="participant-name">
+                          {otherParticipant?.name || 'Unknown User'}
+                        </h4>
+                        <span className="conversation-time">
+                          {conversation.lastMessage ? 
+                            formatLastMessageTime(conversation.lastMessage.timestamp) : 
+                            formatLastMessageTime(conversation.createdAt)
+                          }
+                        </span>
+                      </div>
+                      <div className="conversation-preview">
+                        <p className="last-message">
+                          {conversation.lastMessage ? 
+                            conversation.lastMessage.content : 
+                            'No messages yet'
+                          }
+                        </p>
+                        {unreadCount > 0 && (
+                          <span className="unread-count">{unreadCount}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Chat Modal */}
+      {isChatModalOpen && selectedConversation && (
+        <ChatModal
+          isOpen={isChatModalOpen}
+          onClose={handleCloseChatModal}
+          providerId={selectedConversation.participants.find(p => p.userId !== user._id)?.userId}
+          providerName={selectedConversation.participants.find(p => p.userId !== user._id)?.name || 'User'}
+          serviceId={selectedConversation.serviceId}
+        />
+      )}
     </div>
   );
 };

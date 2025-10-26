@@ -1,12 +1,13 @@
 import express from "express";
 import { registerUser, loginUser } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { validateUserRegistration, validateUserLogin } from "../middleware/validationMiddleware.js";
 
 const router = express.Router();
 
 // Public routes
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post("/register", validateUserRegistration, registerUser);
+router.post("/login", validateUserLogin, loginUser);
 router.post("/logout", (req, res) => {
   // If using cookies: res.clearCookie('token');
   res.json({ message: "Logged out successfully. Please remove the token on the client." });

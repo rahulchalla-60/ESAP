@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import { apiService, handleApiError } from "../config/api.js";
 import "./Register.css";
 
 const Register = () => {
@@ -96,22 +96,26 @@ const Register = () => {
     
     try {
       // Register user first
-      const userResponse = await axios.post("http://localhost:5000/api/users/register", form);
+      const userResponse = await apiService.user.register(form);
       
       // If provider and service form is filled, create service
       if (form.role === "provider" && showServiceForm && serviceForm.serviceName) {
-        const token = userResponse.data.token;
-        await axios.post("http://localhost:5000/api/services", serviceForm, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // Store token temporarily for service creation
+        const token = userResponse.data.data?.token || userResponse.data.token;
+        localStorage.setItem('token', token);
+        
+        await apiService.services.create(serviceForm);
         setMessage("Registration and service creation successful!");
       } else {
+        // Store token for regular users too
+        const token = userResponse.data.data?.token || userResponse.data.token;
+        if (token) {
+          localStorage.setItem('token', token);
+        }
         setMessage("Registration successful!");
       }
     } catch (err) {
-      setMessage(err.response?.data?.message || "Registration failed");
+      setMessage(handleApiError(err));
     }
   };
 

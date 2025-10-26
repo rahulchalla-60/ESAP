@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { apiService, handleApiError } from "../config/api.js";
+import { ServiceDetailModal } from "../components";
 import "./Home.css";
 
 const Home = () => {
@@ -8,6 +9,8 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [selectedService, setSelectedService] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   // Check if user is logged in
@@ -21,14 +24,12 @@ const Home = () => {
     // Get user profile to check role
     const getUserProfile = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/users/profile", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await apiService.user.getProfile();
         setUser(response.data);
         
         // If user is a provider, redirect them (providers shouldn't see this page)
         if (response.data.role === "provider") {
-          navigate("/provider-dashboard"); // You can create this later
+          navigate("/provider-dashboard");
           return;
         }
         
@@ -47,12 +48,9 @@ const Home = () => {
   const loadServices = async (search = "") => {
     try {
       setLoading(true);
-      const url = `http://localhost:5000/api/services${search ? `?search=${encodeURIComponent(search)}` : ""}`;
-      console.log("Fetching services from:", url);
+      const params = search ? { search: search.trim() } : {};
       
-      const response = await axios.get(url);
-      console.log("Services response:", response.data);
-      
+      const response = await apiService.services.getAll(params);
       setServices(response.data.services || []);
     } catch (error) {
       console.error("Error loading services:", error);
@@ -79,6 +77,16 @@ const Home = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
+  };
+
+  const handleServiceClick = (service) => {
+    setSelectedService(service);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedService(null);
   };
 
   const formatPrice = (price) => {
@@ -144,7 +152,18 @@ const Home = () => {
         ) : (
           <div className="services-grid">
             {services.map((service) => (
-              <div key={service._id} className="service-card">
+              <div 
+                key={service._id} 
+                className="service-card clickable"
+                onClick={() => handleServiceClick(service)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleServiceClick(service);
+                  }
+                }}
+              >
                 {renderServiceMedia(service.media)}
                 <div className="service-info">
                   <h3>{service.serviceName}</h3>
@@ -157,11 +176,21 @@ const Home = () => {
                     </div>
                   )}
                 </div>
+                <div className="service-card-overlay">
+                  <span className="view-details">Click to view details</span>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      
+      {/* Service Detail Modal */}
+      <ServiceDetailModal 
+        service={selectedService}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };
